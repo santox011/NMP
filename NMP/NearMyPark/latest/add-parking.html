@@ -1,0 +1,159 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>Add Parking</title>
+
+<style>
+body {
+    font-family: 'Segoe UI';
+    background: linear-gradient(135deg,#1e3c72,#2a5298);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100vh;
+}
+
+.container {
+    background: white;
+    padding: 25px;
+    border-radius: 12px;
+    width: 350px;
+}
+
+input, select {
+    width: 100%;
+    padding: 10px;
+    margin: 8px 0;
+}
+
+button {
+    width: 100%;
+    padding: 12px;
+    background: #2a5298;
+    color: white;
+    border: none;
+    cursor: pointer;
+}
+</style>
+
+</head>
+
+<body>
+<div class="container">
+
+<h2>Add Parking</h2>
+
+<input id="location" placeholder="Location">
+<input id="address" placeholder="Address">
+
+<select id="vehicleType">
+    <option>2 Wheeler</option>
+    <option>4 Wheeler Small</option>
+    <option>4 Wheeler Big</option>
+    <option>Heavy Vehicle</option>
+</select>
+
+<input id="mobile" placeholder="Mobile Number">
+<input id="altMobile" placeholder="Alternate Number">
+<input id="price" placeholder="Price">
+
+<!-- 🔥 NEW FEATURES -->
+
+<h4>Map Options</h4>
+
+<input id="mapLink" placeholder="Paste Google Map Link">
+
+<button onclick="getCurrentLocation()">Use Current Location</button>
+
+<p id="locationStatus"></p>
+
+<button onclick="addParking()">Submit</button>
+
+</div>
+
+<script>
+function addParking() {
+
+    let userId = localStorage.getItem("userId");
+
+    if (!userId) {
+        alert("Please login first");
+        return;
+    }
+
+    let location = document.getElementById("location").value.trim();
+    let address = document.getElementById("address").value.trim();
+    let vehicleType = document.getElementById("vehicleType").value;
+    let mobile = document.getElementById("mobile").value;
+    let altMobile = document.getElementById("altMobile").value;
+    let price = parseFloat(document.getElementById("price").value);
+    let mapLink = document.getElementById("mapLink").value.trim();
+
+    // ✅ VALIDATION (MUST BE HERE)
+    if (!location || !vehicleType) {
+        alert("Please fill required fields (Location & Vehicle Type)");
+        return;
+    }
+
+    let data = {
+        location: location,
+        address: address,
+        vehicleType: vehicleType,
+        mobile: mobile,
+        alternateMobile: altMobile,
+        price: price,
+
+        userId: userId,
+
+        mapLink: mapLink,
+        latitude: latitude,
+        longitude: longitude
+    };
+
+    console.log("Sending Data:", data);
+
+    fetch("http://localhost:8081/api/parking/add", {
+        method: "POST",
+        headers: {
+            "Content-Type":"application/json"
+        },
+        body: JSON.stringify(data)
+    })
+    .then(res => res.json())
+    .then(() => {
+        alert("Parking Added Successfully");
+        window.location.href = "dashboard.html";
+    })
+    .catch(err => {
+        console.error(err);
+        alert("Error adding parking");
+    });
+}
+
+let latitude = null;
+let longitude = null;
+
+function getCurrentLocation() {
+
+    if (navigator.geolocation) {
+
+        navigator.geolocation.getCurrentPosition(position => {
+
+            latitude = position.coords.latitude;
+            longitude = position.coords.longitude;
+
+            document.getElementById("locationStatus").innerText =
+                "Location captured ✔";
+
+        }, () => {
+            alert("Location permission denied");
+        });
+
+    } else {
+        alert("Geolocation not supported");
+    }
+}
+</script>
+
+</body>
+</html>

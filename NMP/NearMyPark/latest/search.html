@@ -1,0 +1,242 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>Search Parking</title>
+
+<style>
+body {
+    margin: 0;
+    font-family: 'Segoe UI';
+    background: url('https://images.unsplash.com/photo-1506521781263-d8422e82f27a') no-repeat center/cover;
+}
+
+/* Overlay */
+.overlay {
+    background: rgba(0,0,0,0.6);
+    height: 100vh;
+    padding: 20px;
+}
+
+/* Card */
+.container {
+    max-width: 800px;
+    margin: auto;
+    background: rgba(255,255,255,0.95);
+    padding: 20px;
+    border-radius: 12px;
+    text-align: center;
+}
+
+/* Inputs */
+input, select {
+    padding: 10px;
+    margin: 10px;
+    width: 40%;
+    border-radius: 6px;
+    border: 1px solid #ccc;
+}
+
+/* Button */
+button {
+    padding: 10px 20px;
+    background: #2a5298;
+    color: white;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+}
+
+/* Table */
+.table {
+    width: 100%;
+    margin-top: 20px;
+    border-collapse: collapse;
+}
+
+.table th {
+    background: #2a5298;
+    color: white;
+    padding: 10px;
+}
+
+.table td {
+    padding: 10px;
+    border-bottom: 1px solid #ddd;
+}
+
+.table tr:hover {
+    background: #f5f5f5;
+}
+
+/* Badge */
+.available {
+    color: green;
+    font-weight: bold;
+}
+
+.booked {
+    color: red;
+    font-weight: bold;
+}
+</style>
+
+</head>
+
+<body>
+
+<div class="overlay">
+
+<div class="container">
+
+<h2>🔍 Search Parking</h2>
+
+<input id="location" placeholder="Enter Location">
+<input id="address" placeholder="Enter Address"><br>
+
+<select id="vehicleType">
+    <option>2 Wheeler</option>
+    <option>4 Wheeler Small</option>
+    <option>4 Wheeler Big</option>
+    <option>Heavy Vehicle</option>
+</select>
+
+<br>
+
+<button onclick="searchParking()">Search</button>
+
+<div id="result"></div>
+
+</div>
+</div>
+
+<script>
+
+let userLat = 0;
+let userLng = 0;
+
+// 📡 GET CURRENT LOCATION
+navigator.geolocation.getCurrentPosition(pos => {
+    userLat = pos.coords.latitude;
+    userLng = pos.coords.longitude;
+});
+function sendRequest(parkingId) {
+
+    let requesterId = localStorage.getItem("userId");
+
+    fetch("http://localhost:8081/api/request/create", {
+        method: "POST",
+        headers: {"Content-Type":"application/json"},
+        body: JSON.stringify({
+            parkingId: parkingId,
+            requesterId: requesterId
+        })
+    })
+    .then(() => {
+        alert("Request sent to owner");
+    });
+}
+
+function searchParking() {
+
+    let location = document.getElementById("location").value.trim();
+    let address = document.getElementById("address").value.trim();
+    let vehicleType = document.getElementById("vehicleType").value;
+
+    if (!location && !address) {
+        alert("Enter location or address");
+        return;
+    }
+
+    fetch("http://localhost:8081/api/search", {
+        method: "POST",
+        headers: {"Content-Type":"application/json"},
+        body: JSON.stringify({
+            location: location,
+            address: address,
+            vehicleType: vehicleType,
+            latitude: userLat,
+            longitude: userLng
+        })
+    })
+    .then(res => res.json())
+    .then(data => {
+
+        if (!data || data.length === 0) {
+            document.getElementById("result").innerHTML = "<p>No parking found</p>";
+            return;
+        }
+
+        let html = `
+        <table class="table">
+        <tr>
+            <th>Location</th>
+            <th>Vehicle</th>
+            <th>Price</th>
+            <th>Owner Contact</th>
+            <th>Distance (km)</th>
+            <th>Status</th>
+            <th>Map Link</th>
+            <th>GPS Location</th>
+            <th>Request</th>
+        </tr>`;
+
+        data.forEach(item => {
+
+    let p = item.parking;
+
+    let status = p.booked
+        ? "<span class='booked'>Booked</span>"
+        : "<span class='available'>Available</span>";
+
+    // 📍 Map Link
+    let mapLinkIcon = p.mapLink && p.mapLink.trim() !== ""
+        ? `<a href="${p.mapLink}" target="_blank">📍</a>`
+        : "-";
+
+    // 🧭 GPS
+    let gpsIcon = (p.latitude && p.longitude)
+        ? `<a href="https://maps.google.com?q=${p.latitude},${p.longitude}" target="_blank">🧭</a>`
+        : "-";
+
+    // 📞 Contact
+    let contact = `
+        <a href="tel:${p.mobile}">📞</a>
+        <a href="https://wa.me/91${p.mobile}" target="_blank">💬</a>
+        <br>${p.mobile}
+    `;
+
+    // 🔥 REQUEST BUTTON (MOVE HERE)
+    let requestBtn = `
+        <button onclick="sendRequest(${p.id})">
+            Request
+        </button>
+    `;
+
+    html += `
+    <tr>
+        <td>${p.location}</td>
+        <td>${p.vehicleType}</td>
+        <td>₹ ${p.price}</td>
+        <td>${contact}</td>
+        <td>${item.distance.toFixed(2)}</td>
+        <td>${status}</td>
+        <td>${mapLinkIcon}</td>
+        <td>${gpsIcon}</td>
+        <td>${requestBtn}</td>
+    </tr>
+    `;
+});
+        html += "</table>";
+
+        document.getElementById("result").innerHTML = html;
+
+    })
+    .catch(() => {
+        alert("Error fetching data");
+    });
+}
+
+</script>
+
+</body>
+</html>

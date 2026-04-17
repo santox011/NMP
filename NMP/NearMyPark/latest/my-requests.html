@@ -1,0 +1,198 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>My Parking Requests</title>
+
+<style>
+body {
+    margin: 0;
+    font-family: 'Segoe UI';
+    background: linear-gradient(135deg,#1e3c72,#2a5298);
+}
+
+/* Title */
+h2 {
+    text-align: center;
+    color: white;
+    padding: 20px;
+}
+
+/* Container */
+.container {
+    width: 90%;
+    margin: auto;
+    background: white;
+    border-radius: 12px;
+    padding: 20px;
+    box-shadow: 0 10px 25px rgba(0,0,0,0.2);
+}
+
+/* Table */
+table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+/* Header */
+th {
+    background: #2a5298;
+    color: white;
+    padding: 12px;
+}
+
+/* Rows */
+td {
+    padding: 12px;
+    text-align: center;
+    border-bottom: 1px solid #ddd;
+}
+
+tr:hover {
+    background: #f5f5f5;
+}
+
+/* Status */
+.pending {
+    color: orange;
+    font-weight: bold;
+}
+
+.accepted {
+    color: green;
+    font-weight: bold;
+}
+
+.rejected {
+    color: red;
+    font-weight: bold;
+}
+
+/* Buttons */
+.btn {
+    padding: 6px 12px;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    margin: 2px;
+}
+
+.accept-btn {
+    background: green;
+    color: white;
+}
+
+.reject-btn {
+    background: red;
+    color: white;
+}
+
+.btn:hover {
+    opacity: 0.8;
+}
+
+/* No data */
+.no-data {
+    text-align: center;
+    font-size: 18px;
+    color: white;
+    margin-top: 40px;
+}
+</style>
+
+</head>
+
+<body>
+
+<h2>📩 My Parking Requests</h2>
+
+<div id="reqTable"></div>
+
+<script>
+
+let ownerId = localStorage.getItem("userId");
+
+console.log("Owner ID:", ownerId);
+
+if (!ownerId) {
+    alert("Please login first");
+    window.location.href = "login.html";
+}
+
+// FETCH REQUESTS
+fetch("http://localhost:8081/api/request/owner/" + ownerId)
+.then(res => res.json())
+.then(data => {
+
+    let container = document.getElementById("reqTable");
+
+    if (!data || data.length === 0) {
+        container.innerHTML = "<div class='no-data'>No requests found</div>";
+        return;
+    }
+
+    let html = `
+    <div class="container">
+    <table>
+    <tr>
+        <th>Parking ID</th>
+        <th>Requester</th>
+        <th>Status</th>
+        <th>Action</th>
+    </tr>`;
+
+    data.forEach(r => {
+
+        let statusClass = r.status.toLowerCase();
+
+        let action = "";
+
+        if (r.status === "PENDING") {
+            action = `
+            <button class="btn accept-btn" onclick="accept(${r.id})">Accept</button>
+            <button class="btn reject-btn" onclick="reject(${r.id})">Reject</button>
+            `;
+        } else {
+            action = "-";
+        }
+
+        html += `
+        <tr>
+            <td>${r.parkingId}</td>
+            <td>${r.requesterId}</td>
+            <td class="${statusClass}">${r.status}</td>
+            <td>${action}</td>
+        </tr>
+        `;
+    });
+
+    html += "</table></div>";
+
+    container.innerHTML = html;
+});
+
+// ACCEPT
+function accept(id) {
+    fetch("http://localhost:8081/api/request/accept/" + id, {
+        method: "PUT"
+    })
+    .then(() => {
+        alert("Request Accepted");
+        location.reload();
+    });
+}
+
+// REJECT
+function reject(id) {
+    fetch("http://localhost:8081/api/request/reject/" + id, {
+        method: "PUT"
+    })
+    .then(() => {
+        alert("Request Rejected");
+        location.reload();
+    });
+}
+
+</script>
+
+</body>
+</html>

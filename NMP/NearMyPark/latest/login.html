@@ -1,0 +1,251 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>NearMyPark Login</title>
+
+<style>
+    body {
+        margin: 0;
+        font-family: 'Segoe UI', sans-serif;
+        background: linear-gradient(135deg, #1e3c72, #2a5298);
+        height: 100vh;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+    }
+
+    .container {
+        width: 350px;
+        background: #fff;
+        border-radius: 12px;
+        padding: 30px;
+        box-shadow: 0 10px 25px rgba(0,0,0,0.2);
+        text-align: center;
+    }
+
+    .title {
+        font-size: 24px;
+        font-weight: bold;
+        margin-bottom: 10px;
+        color: #2a5298;
+    }
+
+    .subtitle {
+        font-size: 14px;
+        color: #666;
+        margin-bottom: 20px;
+    }
+
+    .toggle {
+        display: flex;
+        justify-content: space-between;
+        margin-bottom: 20px;
+        border-radius: 8px;
+        overflow: hidden;
+        border: 1px solid #ddd;
+    }
+
+    .toggle button {
+        flex: 1;
+        padding: 10px;
+        border: none;
+        background: #f5f5f5;
+        cursor: pointer;
+        font-weight: 500;
+    }
+
+    .toggle button.active {
+        background: #2a5298;
+        color: white;
+    }
+
+    .input-box {
+        margin-bottom: 15px;
+        text-align: left;
+    }
+
+    .input-box label {
+        font-size: 13px;
+        color: #444;
+    }
+
+    .input-box input {
+        width: 100%;
+        padding: 10px;
+        margin-top: 5px;
+        border-radius: 6px;
+        border: 1px solid #ccc;
+        outline: none;
+        transition: 0.3s;
+    }
+
+    .input-box input:focus {
+        border-color: #2a5298;
+    }
+
+    .forgot {
+        text-align: right;
+        font-size: 12px;
+        margin-bottom: 15px;
+    }
+
+    .forgot a {
+        text-decoration: none;
+        color: #2a5298;
+    }
+    .forgot a {
+    color: #2a5298;
+    text-decoration: none;
+    font-weight: 500;
+}
+
+.forgot a:hover {
+    text-decoration: underline;
+}
+
+    .btn {
+        width: 100%;
+        padding: 12px;
+        background: #2a5298;
+        color: white;
+        border: none;
+        border-radius: 8px;
+        font-size: 15px;
+        cursor: pointer;
+        transition: 0.3s;
+    }
+
+    .btn:hover {
+        background: #1e3c72;
+    }
+
+    .register {
+        margin-top: 15px;
+        font-size: 13px;
+    }
+
+    .register a {
+        color: #2a5298;
+        text-decoration: none;
+        font-weight: 500;
+    }
+
+    .hidden {
+        display: none;
+    }
+</style>
+</head>
+
+<body>
+
+<div class="container">
+    <div class="title">NearMyPark</div>
+    <div class="subtitle">Login to continue</div>
+
+    <!-- Toggle Buttons -->
+    <div class="toggle">
+        <button id="emailBtn" class="active" onclick="switchMode('email')">Email</button>
+        <button id="mobileBtn" onclick="switchMode('mobile')">Mobile</button>
+    </div>
+
+    <!-- Email Login -->
+    <div id="emailLogin">
+        <div class="input-box">
+            <label>Email</label>
+            <input type="email" id="email" placeholder="Enter your email">
+        </div>
+
+        <div class="input-box">
+            <label>Password</label>
+            <input type="password" id="passwordEmail" placeholder="Enter password">
+        </div>
+    </div>
+
+    <!-- Mobile Login -->
+    <div id="mobileLogin" class="hidden">
+        <div class="input-box">
+            <label>Mobile Number</label>
+            <input type="text" id="mobile" placeholder="Enter mobile number">
+        </div>
+
+        <div class="input-box">
+            <label>Password</label>
+            <input type="password" id="passwordMobile" placeholder="Enter password">
+        </div>
+    </div>
+
+    <div class="forgot">
+    <a href="forgot-password.html">Forgot Password?</a>
+</div>
+
+    <button class="btn" onclick="login()">Login</button>
+
+    <div class="register">
+        New user? <a href="register.html">Create Account</a>
+    </div>
+</div>
+
+<script>
+    localStorage.setItem("userId", user.userId);
+function switchMode(mode) {
+    if (mode === 'email') {
+        document.getElementById('emailLogin').classList.remove('hidden');
+        document.getElementById('mobileLogin').classList.add('hidden');
+        document.getElementById('emailBtn').classList.add('active');
+        document.getElementById('mobileBtn').classList.remove('active');
+    } else {
+        document.getElementById('mobileLogin').classList.remove('hidden');
+        document.getElementById('emailLogin').classList.add('hidden');
+        document.getElementById('mobileBtn').classList.add('active');
+        document.getElementById('emailBtn').classList.remove('active');
+    }
+}
+
+function login() {
+
+    let email = document.getElementById("email").value.trim();
+    let passwordEmail = document.getElementById("passwordEmail").value.trim();
+
+    let mobile = document.getElementById("mobile").value.trim();
+    let passwordMobile = document.getElementById("passwordMobile").value.trim();
+
+    let data;
+
+    if (email) {
+        data = { email: email, password: passwordEmail };
+    } else {
+        data = { phone: mobile, password: passwordMobile };
+    }
+
+   fetch("http://localhost:8081/api/auth/login", {
+    method: "POST",
+    headers: {
+        "Content-Type": "application/json"
+    },
+    body: JSON.stringify(data)
+})
+.then(res => {
+
+    if (!res.ok) {
+        throw new Error("Invalid login");
+    }
+
+    return res.json();
+})
+.then(user => {
+
+    localStorage.setItem("userId", user.phone);
+
+    alert("Login Success");
+    window.location.href = "dashboard.html";
+})
+.catch(() => {
+    alert("Invalid email/mobile or password");
+});
+}
+</script>
+
+
+</body>
+</html>

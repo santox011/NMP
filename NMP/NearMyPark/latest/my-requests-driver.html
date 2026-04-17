@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>My Requests</title>
+
+<style>
+body {
+    margin: 0;
+    font-family: 'Segoe UI';
+    background: linear-gradient(135deg,#1e3c72,#2a5298);
+}
+
+h2 {
+    text-align: center;
+    color: white;
+    padding: 20px;
+}
+
+.container {
+    width: 90%;
+    margin: auto;
+    background: white;
+    border-radius: 10px;
+    padding: 20px;
+}
+
+table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+th {
+    background: #2a5298;
+    color: white;
+    padding: 10px;
+}
+
+td {
+    padding: 10px;
+    text-align: center;
+    border-bottom: 1px solid #ddd;
+}
+
+.pending { color: orange; font-weight: bold; }
+.accepted { color: green; font-weight: bold; }
+.rejected { color: red; font-weight: bold; }
+</style>
+</head>
+
+<body>
+
+<h2>🚗 My Requests</h2>
+
+<div id="table"></div>
+
+<script>
+
+let userId = localStorage.getItem("userId");
+
+function loadRequests() {
+
+    fetch("http://localhost:8081/api/request/user/" + userId)
+    .then(res => res.json())
+    .then(data => {
+
+        if (!data || data.length === 0) {
+            document.getElementById("table").innerHTML = "<p>No requests found</p>";
+            return;
+        }
+
+        let html = `
+        <div class="container">
+        <table>
+        <tr>
+            <th>Location</th>
+            <th>Vehicle</th>
+            <th>Owner Contact</th>
+            <th>Status</th>
+        </tr>`;
+
+        data.forEach(r => {
+
+            let statusClass = r.status.toLowerCase();
+
+            let contact = r.mobile
+                ? `<a href="tel:${r.mobile}">📞</a>
+                   <a href="https://wa.me/91${r.mobile}" target="_blank">💬</a>
+                   <br>${r.mobile}`
+                : "-";
+
+            html += `
+            <tr>
+                <td>${r.location || '-'}</td>
+                <td>${r.vehicleType || '-'}</td>
+                <td>${contact}</td>
+                <td class="${statusClass}">${r.status}</td>
+            </tr>
+            `;
+        });
+
+        html += "</table></div>";
+
+        document.getElementById("table").innerHTML = html;
+    });
+}
+
+loadRequests();
+
+setInterval(() => {
+    loadRequests();
+}, 5000);
+</script>
+
+</body>
+</html>

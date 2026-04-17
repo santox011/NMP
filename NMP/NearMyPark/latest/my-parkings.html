@@ -1,0 +1,242 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>My Parkings</title>
+
+<style>
+body {
+    margin: 0;
+    font-family: 'Segoe UI';
+    background: linear-gradient(135deg,#1e3c72,#2a5298);
+}
+
+/* Title */
+h2 {
+    text-align: center;
+    color: white;
+    padding: 20px;
+}
+
+/* Table container */
+.table-container {
+    width: 90%;
+    margin: auto;
+    background: white;
+    border-radius: 10px;
+    overflow: hidden;
+    box-shadow: 0 10px 20px rgba(0,0,0,0.2);
+}
+
+/* Table */
+table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+/* Header */
+th {
+    background: #2a5298;
+    color: white;
+    padding: 12px;
+}
+
+/* Rows */
+td {
+    padding: 12px;
+    text-align: center;
+    border-bottom: 1px solid #ddd;
+}
+
+tr:hover {
+    background: #f5f5f5;
+}
+
+/* No data message */
+.no-data {
+    text-align: center;
+    color: white;
+    margin-top: 50px;
+    font-size: 18px;
+}
+
+/* 🔥 Three dot menu */
+.menu {
+    position: relative;
+    cursor: pointer;
+    font-size: 20px;
+}
+
+/* Dropdown */
+.dropdown {
+    display: none;
+    position: absolute;
+    right: 0;
+    top: 20px;
+    background: white;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+    min-width: 100px;
+    z-index: 10;
+}
+
+/* Show dropdown */
+.menu:hover .dropdown {
+    display: block;
+}
+
+/* Dropdown item */
+.dropdown div {
+    padding: 8px;
+    cursor: pointer;
+    text-align: center;
+}
+
+.dropdown div:hover {
+    background: #eee;
+}
+
+/* 🔴 Book button */
+.book-btn {
+    background: red;
+    color: white;
+}
+
+/* 🟢 Unbook button */
+.unbook-btn {
+    background: #eee;
+}
+</style>
+
+</head>
+
+<body>
+
+<h2>My Parkings</h2>
+
+<!-- ✅ ONLY THIS CONTAINER -->
+<div id="tableContainer"></div>
+
+
+<script>
+
+let userId = localStorage.getItem("userId");
+
+if (!userId) {
+    alert("Please login first");
+    window.location.href = "login.html";
+}
+
+// FETCH DATA
+fetch("http://localhost:8081/api/parking/my/" + userId)
+.then(res => res.json())
+.then(data => {
+
+    let container = document.getElementById("tableContainer");
+
+    if (!data || data.length === 0) {
+        container.innerHTML = "<div class='no-data'>No parking you added</div>";
+        return;
+    }
+
+    let table = `
+    <div class="table-container">
+    <table>
+        <tr>
+            <th>Location</th>
+            <th>Address</th>
+            <th>Vehicle</th>
+            <th>Price</th>
+            <th>Mobile</th>
+            <th>Alt</th>
+            <th>Map</th>
+            <th>GPS</th>
+            <th>Status</th>
+            <th>Action</th>
+        </tr>
+    `;
+
+    data.forEach(p => {
+
+        let mapLinkIcon = p.mapLink
+            ? `<a href="${p.mapLink}" target="_blank">📍</a>`
+            : "-";
+
+        let gpsIcon = (p.latitude && p.longitude)
+            ? `<a href="https://maps.google.com?q=${p.latitude},${p.longitude}" target="_blank">🧭</a>`
+            : "-";
+
+        let statusText = p.booked ? "Unbook" : "Book";
+        let statusClass = p.booked ? "unbook-btn" : "book-btn";
+
+        let statusLabel = p.booked
+            ? '<span style="color:red">Booked</span>'
+            : '<span style="color:green">Available</span>';
+
+        table += `
+        <tr>
+            <td>${p.location || '-'}</td>
+            <td>${p.address || '-'}</td>
+            <td>${p.vehicleType || '-'}</td>
+            <td>₹ ${p.price || 0}</td>
+            <td>${p.mobile || '-'}</td>
+            <td>${p.alternateMobile || '-'}</td>
+            <td>${mapLinkIcon}</td>
+            <td>${gpsIcon}</td>
+            <td>${statusLabel}</td>
+
+            <!-- 🔥 THREE DOT MENU -->
+            <td>
+                <div class="menu">
+                    ⋮
+                    <div class="dropdown">
+                        <div class="${statusClass}"
+                             onclick="toggleStatus(${p.id}, ${p.booked})">
+                             ${statusText}
+                        </div>
+                    </div>
+                </div>
+            </td>
+        </tr>
+        `;
+    });
+
+    table += "</table></div>";
+    container.innerHTML = table;
+
+})
+.catch(err => {
+    console.error(err);
+    document.getElementById("tableContainer").innerHTML =
+        "<div class='no-data'>Error loading data</div>";
+});
+
+
+// 🔥 SINGLE CLEAN FUNCTION
+function toggleStatus(id, currentStatus) {
+
+    let newStatus = !currentStatus;
+
+    fetch("http://localhost:8081/api/parking/status/" + id, {
+        method: "PUT",
+        headers: {
+            "Content-Type": "application/json"
+        },
+        body: JSON.stringify({ booked: newStatus })
+    })
+    .then(res => {
+        if (!res.ok) throw new Error();
+        return res.json();
+    })
+    .then(() => {
+        alert("Status Updated");
+        location.reload();
+    })
+    .catch(() => {
+        alert("Error updating status");
+    });
+}
+
+</script>
+
+</body>
+</html>
